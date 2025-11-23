@@ -128,7 +128,7 @@ MIT
 
 ## 👥 Desenvolvido por
 
-Frank Salarini para Store Lamayer - Comércio de Especiarias
+Marcus Salarini para Store Lamayer - Comércio de Especiarias
 
 ---
 
