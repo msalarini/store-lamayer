@@ -202,12 +202,15 @@ export default function DashboardPage() {
                         <Button variant="outline" onClick={() => router.push("/suppliers")}>
                             🏭 Fornecedores
                         </Button>
+                        <Button variant="outline" onClick={() => router.push("/barcodes")}>
+                            🏷️ Etiquetas
+                        </Button>
                         <Button variant="outline" onClick={() => router.push("/analytics")}>
                             📊 Analytics
                         </Button>
                         <ThemeToggle />
-                        <Button variant="outline" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} title="Sair">
-                            <LogOut className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => signOut()}>
+                            <LogOut className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
