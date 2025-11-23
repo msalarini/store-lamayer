@@ -56,7 +56,8 @@ export default function AnalyticsPage() {
             .from("products")
             .select(`
                 *,
-                category:categories(id, name, icon, color)
+                category:categories(id, name, icon, color),
+                supplier:suppliers(id, name)
             `);
 
         // Fetch categories
@@ -116,6 +117,25 @@ export default function AnalyticsPage() {
             name: p.name,
             value: p.quantity
         })).sort((a, b) => b.value - a.value).slice(0, 10); // Top 10
+    };
+
+    const getSupplierData = () => {
+        const supplierMap = new Map();
+
+        products.forEach(product => {
+            const supplierName = product.supplier?.name || "Sem Fornecedor";
+            const current = supplierMap.get(supplierName) || { count: 0, value: 0 };
+            supplierMap.set(supplierName, {
+                count: current.count + 1,
+                value: current.value + (product.quantity * product.buy_price || 0)
+            });
+        });
+
+        return Array.from(supplierMap.entries()).map(([name, data]) => ({
+            name,
+            quantidade: data.count,
+            valor: data.value
+        }));
     };
 
     // Export functions
@@ -197,6 +217,7 @@ export default function AnalyticsPage() {
     const categoryData = getCategoryData();
     const profitData = getProfitByCategory();
     const stockData = getStockDistribution();
+    const supplierData = getSupplierData();
 
     return (
         <div className="min-h-screen bg-background p-8">
@@ -285,7 +306,7 @@ export default function AnalyticsPage() {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
-                                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                        label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                                         outerRadius={80}
                                         fill="#8884d8"
                                         dataKey="value"
@@ -317,12 +338,71 @@ export default function AnalyticsPage() {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
-                                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                        label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
                                         outerRadius={80}
                                         fill="#8884d8"
                                         dataKey="valor"
                                     >
                                         {categoryData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value: any) => `R$ ${value.toFixed(2)}`} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Supplier Analytics */}
+                <h2 className="text-2xl font-bold mt-8 mb-4">Análise de Fornecedores</h2>
+                <div className="grid gap-6 md:grid-cols-2">
+                    {/* Products by Supplier */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <BarChart3 className="h-5 w-5" />
+                                Produtos por Fornecedor
+                            </CardTitle>
+                            <CardDescription>Quantidade de produtos por fornecedor</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={supplierData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="quantidade" fill="#8B5CF6" name="Quantidade" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Value by Supplier */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <PieChartIcon className="h-5 w-5" />
+                                Valor Investido por Fornecedor
+                            </CardTitle>
+                            <CardDescription>Distribuição do valor de compra por fornecedor</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie
+                                        data={supplierData}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={false}
+                                        label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                                        outerRadius={80}
+                                        fill="#8884d8"
+                                        dataKey="valor"
+                                    >
+                                        {supplierData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>

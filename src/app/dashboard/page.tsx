@@ -64,7 +64,8 @@ export default function DashboardPage() {
             .from("products")
             .select(`
                 *,
-                category:categories(id, name, icon, color)
+                category:categories(id, name, icon, color),
+                supplier:suppliers(id, name)
             `)
             .order("name", { ascending: true });
 
@@ -352,6 +353,7 @@ export default function DashboardPage() {
                                 <TableRow>
                                     <TableHead>Nome</TableHead>
                                     <TableHead>Categoria</TableHead>
+                                    <TableHead>Fornecedor</TableHead>
                                     <TableHead>Estoque</TableHead>
                                     <TableHead>Validade</TableHead>
                                     <TableHead>Preço Compra</TableHead>
@@ -363,7 +365,7 @@ export default function DashboardPage() {
                             <TableBody>
                                 {filteredProducts.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="text-center text-muted-foreground">
+                                        <TableCell colSpan={9} className="text-center text-muted-foreground">
                                             {searchTerm || selectedCategory !== "all"
                                                 ? "Nenhum produto encontrado com os filtros aplicados."
                                                 : "Nenhum produto cadastrado. Adicione o primeiro produto para começar."}
@@ -386,6 +388,13 @@ export default function DashboardPage() {
                                                         <Badge variant="outline">
                                                             {product.category.icon} {product.category.name}
                                                         </Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {product.supplier ? (
+                                                        <span className="text-sm text-muted-foreground">{product.supplier.name}</span>
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground">-</span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
