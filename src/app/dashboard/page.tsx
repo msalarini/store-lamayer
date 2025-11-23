@@ -205,6 +205,9 @@ export default function DashboardPage() {
                         <Button variant="outline" onClick={() => router.push("/barcodes")}>
                             🏷️ Etiquetas
                         </Button>
+                        <Button variant="outline" onClick={() => router.push("/backup")}>
+                            🛡️ Backup
+                        </Button>
                         <Button variant="outline" onClick={() => router.push("/analytics")}>
                             📊 Analytics
                         </Button>
