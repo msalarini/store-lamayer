@@ -198,6 +198,9 @@ export default function DashboardPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={() => router.push("/analytics")}>
+                            📊 Analytics
+                        </Button>
                         <ThemeToggle />
                         <Button variant="outline" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} title="Sair">
                             <LogOut className="h-4 w-4" />
