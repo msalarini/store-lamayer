@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,6 +14,13 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
@@ -24,6 +31,9 @@ const formSchema = z.object({
     quantity: z.coerce.number().min(0, { message: "A quantidade deve ser maior ou igual a 0." }),
     buyPrice: z.coerce.number().min(0, { message: "O preço de compra deve ser maior ou igual a 0." }),
     sellPrice: z.coerce.number().min(0, { message: "O preço de venda deve ser maior ou igual a 0." }),
+    categoryId: z.string().optional(),
+    expiryDate: z.string().optional(),
+    minStockLevel: z.coerce.number().min(0).optional(),
 });
 
 interface ProductFormProps {
@@ -34,6 +44,22 @@ interface ProductFormProps {
 
 export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        const { data, error } = await supabase
+            .from("categories")
+            .select("*")
+            .order("name", { ascending: true });
+
+        if (!error && data) {
+            setCategories(data);
+        }
+    };
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -42,6 +68,9 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
             quantity: product?.quantity || 0,
             buyPrice: product?.buy_price || 0,
             sellPrice: product?.sell_price || 0,
+            categoryId: product?.category_id?.toString() || "",
+            expiryDate: product?.expiry_date || "",
+            minStockLevel: product?.min_stock_level || 10,
         } as any,
     });
 
@@ -53,6 +82,9 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                 quantity: values.quantity,
                 buy_price: values.buyPrice,
                 sell_price: values.sellPrice,
+                category_id: values.categoryId ? parseInt(values.categoryId) : null,
+                expiry_date: values.expiryDate || null,
+                min_stock_level: values.minStockLevel || 10,
             };
 
             if (product) {
@@ -118,19 +150,76 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                         </FormItem>
                     )}
                 />
+
                 <FormField
                     control={form.control}
-                    name="quantity"
+                    name="categoryId"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Quantidade</FormLabel>
+                            <FormLabel>Categoria</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione uma categoria" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {categories.map((category) => (
+                                        <SelectItem key={category.id} value={category.id.toString()}>
+                                            {category.icon} {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="quantity"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Quantidade</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="0" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="minStockLevel"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Estoque Mínimo</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="10" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="expiryDate"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Data de Validade</FormLabel>
                             <FormControl>
-                                <Input type="number" placeholder="0" {...field} />
+                                <Input type="date" {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
+
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -159,6 +248,7 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                         )}
                     />
                 </div>
+
                 <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Salvando..." : product ? "Atualizar Produto" : "Criar Produto"}
                 </Button>
