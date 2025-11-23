@@ -220,23 +220,26 @@ export default function AnalyticsPage() {
     const supplierData = getSupplierData();
 
     return (
-        <div className="min-h-screen bg-background p-8">
+        <div className="min-h-screen bg-background p-4 md:p-8">
             <div className="container mx-auto space-y-8">
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Analytics & Relatórios</h1>
-                        <p className="text-muted-foreground">Visualize dados e exporte relatórios</p>
+                        <h1 className="text-3xl font-bold">📊 Analytics</h1>
+                        <p className="text-muted-foreground">Relatórios e estatísticas do estoque</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" onClick={() => router.push("/dashboard")}>
+                            ← Voltar
+                        </Button>
                         <Button variant="outline" onClick={exportToExcel}>
-                            <Download className="mr-2 h-4 w-4" /> Exporterar Produtos (Excel)
+                            <Download className="mr-2 h-4 w-4" /> Excel
                         </Button>
                         <Button variant="outline" onClick={exportLogsToCSV}>
-                            <Download className="mr-2 h-4 w-4" /> Exportar Logs (CSV)
+                            <Download className="mr-2 h-4 w-4" /> CSV
                         </Button>
                         <Button onClick={exportFinancialReport}>
-                            <Download className="mr-2 h-4 w-4" /> Relatório Financeiro
+                            <Download className="mr-2 h-4 w-4" /> Rel. Financeiro
                         </Button>
                     </div>
                 </div>
@@ -411,13 +414,6 @@ export default function AnalyticsPage() {
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
-                </div>
-
-                {/* Back to Dashboard */}
-                <div className="flex justify-center">
-                    <Button variant="outline" onClick={() => router.push("/dashboard")}>
-                        Voltar ao Dashboard
-                    </Button>
                 </div>
             </div>
         </div>
