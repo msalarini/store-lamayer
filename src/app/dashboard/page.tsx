@@ -198,6 +198,9 @@ export default function DashboardPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={() => router.push("/suppliers")}>
+                            🏭 Fornecedores
+                        </Button>
                         <Button variant="outline" onClick={() => router.push("/analytics")}>
                             📊 Analytics
                         </Button>

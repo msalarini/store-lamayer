@@ -32,6 +32,7 @@ const formSchema = z.object({
     buyPrice: z.coerce.number().min(0, { message: "O preço de compra deve ser maior ou igual a 0." }),
     sellPrice: z.coerce.number().min(0, { message: "O preço de venda deve ser maior ou igual a 0." }),
     categoryId: z.string().optional(),
+    supplierId: z.string().optional(),
     expiryDate: z.string().optional(),
     minStockLevel: z.coerce.number().min(0).optional(),
 });
@@ -45,9 +46,11 @@ interface ProductFormProps {
 export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
+    const [suppliers, setSuppliers] = useState<any[]>([]);
 
     useEffect(() => {
         fetchCategories();
+        fetchSuppliers();
     }, []);
 
     const fetchCategories = async () => {
@@ -61,6 +64,18 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
         }
     };
 
+    const fetchSuppliers = async () => {
+        const { data, error } = await supabase
+            .from("suppliers")
+            .select("*")
+            .eq("is_active", true)
+            .order("name", { ascending: true });
+
+        if (!error && data) {
+            setSuppliers(data);
+        }
+    };
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -69,6 +84,7 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
             buyPrice: product?.buy_price || 0,
             sellPrice: product?.sell_price || 0,
             categoryId: product?.category_id?.toString() || "",
+            supplierId: product?.supplier_id?.toString() || "",
             expiryDate: product?.expiry_date || "",
             minStockLevel: product?.min_stock_level || 10,
         } as any,
@@ -83,6 +99,7 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                 buy_price: values.buyPrice,
                 sell_price: values.sellPrice,
                 category_id: values.categoryId ? parseInt(values.categoryId) : null,
+                supplier_id: values.supplierId ? parseInt(values.supplierId) : null,
                 expiry_date: values.expiryDate || null,
                 min_stock_level: values.minStockLevel || 10,
             };
