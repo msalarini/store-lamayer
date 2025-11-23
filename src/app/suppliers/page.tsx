@@ -64,9 +64,13 @@ export default function SuppliersPage() {
         handleSubmit,
         reset,
         formState: { errors },
-    } = useForm<SupplierForm>({
+    } = useForm({
         resolver: zodResolver(supplierSchema),
-        defaultValues: editingSupplier || {},
+        defaultValues: {
+            name: "",
+            country: "Brasil",
+            is_active: true,
+        },
     });
 
     useEffect(() => {
@@ -160,8 +164,8 @@ export default function SuppliersPage() {
                     <Star
                         key={i}
                         className={`h-4 w-4 ${i < rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
                             }`}
                     />
                 ))}

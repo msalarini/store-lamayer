@@ -76,7 +76,7 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
         }
     };
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: product?.name || "",
