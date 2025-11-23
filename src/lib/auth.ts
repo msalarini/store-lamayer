@@ -1,49 +1,64 @@
 import { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import AzureADProvider from "next-auth/providers/azure-ad";
 import CredentialsProvider from "next-auth/providers/credentials";
-
-const ALLOWED_EMAILS = ["marcussalarini@gmail.com", "llamayer@hotmail.com"];
+import { supabase } from "./supabase";
 
 export const authOptions: NextAuthOptions = {
     providers: [
-        GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID || "",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        CredentialsProvider({
+            name: "Credentials",
+            credentials: {
+                email: { label: "Email", type: "email", placeholder: "seu@email.com" },
+                password: { label: "Password", type: "password" },
+            },
+            async authorize(credentials) {
+                if (!credentials?.email || !credentials?.password) {
+                    return null;
+                }
+
+                // Query Supabase for user
+                const { data: user, error } = await supabase
+                    .from("users")
+                    .select("*")
+                    .eq("email", credentials.email)
+                    .eq("password", credentials.password) // Plain text comparison (for simplicity)
+                    .single();
+
+                if (error || !user) {
+                    return null;
+                }
+
+                return {
+                    id: user.id.toString(),
+                    email: user.email,
+                    name: user.name,
+                };
+            },
         }),
-        AzureADProvider({
-            clientId: process.env.AZURE_AD_CLIENT_ID || "",
-            clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
-            tenantId: process.env.AZURE_AD_TENANT_ID,
-        }),
-        // DEV ONLY: Bypass for testing when OAuth is not configured
-        ...(process.env.NODE_ENV === "development" && !process.env.GOOGLE_CLIENT_ID
-            ? [
-                CredentialsProvider({
-                    id: "dev-bypass",
-                    name: "Development",
-                    credentials: {
-                        email: { label: "Email", type: "email" },
-                    },
-                    async authorize(credentials) {
-                        if (credentials?.email && ALLOWED_EMAILS.includes(credentials.email)) {
-                            return { id: "dev", email: credentials.email, name: credentials.email };
-                        }
-                        return null;
-                    },
-                }),
-            ]
-            : []),
     ],
     callbacks: {
-        async signIn({ user }) {
-            if (user.email && ALLOWED_EMAILS.includes(user.email)) {
-                return true;
+        async jwt({ token, user }) {
+            if (user) {
+                token.id = user.id;
+                token.name = user.name;
+                token.email = user.email;
             }
-            return false;
+            return token;
+        },
+        async session({ session, token }) {
+            if (token) {
+                session.user = {
+                    id: token.id as string,
+                    name: token.name as string,
+                    email: token.email as string,
+                };
+            }
+            return session;
         },
     },
     pages: {
         signIn: "/login",
+    },
+    session: {
+        strategy: "jwt",
     },
 };
