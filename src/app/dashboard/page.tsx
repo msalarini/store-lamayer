@@ -41,6 +41,17 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 export default function DashboardPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -52,6 +63,10 @@ export default function DashboardPage() {
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+    // Delete state
+    const [productToDelete, setProductToDelete] = useState<{ id: number, name: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -131,25 +146,32 @@ export default function DashboardPage() {
         setFilteredProducts(filtered);
     }, [searchTerm, selectedCategory, products]);
 
-    const handleDelete = async (id: number, name: string) => {
-        if (confirm("Tem certeza que deseja excluir este produto?")) {
-            const { error } = await supabase.from("products").delete().eq("id", id);
+    const confirmDelete = (product: { id: number, name: string }) => {
+        setProductToDelete(product);
+    };
 
-            if (error) {
-                toast.error("Erro ao excluir produto");
-            } else {
-                toast.success("Produto excluído");
-                if (session?.user?.email) {
-                    await supabase.from("logs").insert({
-                        action: "EXCLUSAO",
-                        details: `Produto excluído: ${name}`,
-                        user_email: session.user.email,
-                    });
-                }
-                fetchProducts();
-                fetchLogs();
+    const executeDelete = async () => {
+        if (!productToDelete) return;
+
+        setIsDeleting(true);
+        const { error } = await supabase.from("products").delete().eq("id", productToDelete.id);
+
+        if (error) {
+            toast.error("Erro ao excluir produto");
+        } else {
+            toast.success("Produto excluído");
+            if (session?.user?.email) {
+                await supabase.from("logs").insert({
+                    action: "EXCLUSAO",
+                    details: `Produto excluído: ${productToDelete.name}`,
+                    user_email: session.user.email,
+                });
             }
+            fetchProducts();
+            fetchLogs();
         }
+        setIsDeleting(false);
+        setProductToDelete(null);
     };
 
     // Helper function to get expiry status
@@ -438,6 +460,7 @@ export default function DashboardPage() {
                                                             setIsDialogOpen(true);
                                                         }}
                                                         title="Editar"
+                                                        data-testid={`edit-btn-${product.id}`}
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
@@ -445,8 +468,9 @@ export default function DashboardPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="text-red-500"
-                                                        onClick={() => handleDelete(product.id, product.name)}
+                                                        onClick={() => confirmDelete(product)}
                                                         title="Excluir"
+                                                        data-testid={`delete-btn-${product.id}`}
                                                     >
                                                         <Trash className="h-4 w-4" />
                                                     </Button>
@@ -498,6 +522,32 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <AlertDialog open={!!productToDelete} onOpenChange={(open: boolean) => !open && setProductToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Essa ação não pode ser desfeita. Isso excluirá permanentemente o produto
+                            <span className="font-bold text-foreground"> {productToDelete?.name} </span>
+                            e removerá seus dados dos nossos servidores.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e: React.MouseEvent) => {
+                                e.preventDefault();
+                                executeDelete();
+                            }}
+                            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? "Excluindo..." : "Sim, excluir produto"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

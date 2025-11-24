@@ -172,7 +172,8 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
             onSuccess();
         } catch (error) {
             console.error(error);
-            toast.error("Algo deu errado");
+            console.error(error);
+            toast.error(`Erro: ${(error as any).message || "Algo deu errado"}`);
         } finally {
             setIsLoading(false);
         }
