@@ -15,20 +15,6 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
-                // Mock user for testing (bypasses Supabase)
-                // Only enabled if ENABLE_MOCK_USER environment variable is set to 'true'
-                if (
-                    process.env.ENABLE_MOCK_USER === "true" &&
-                    credentials.email === "mock@test.com" &&
-                    credentials.password === "mock"
-                ) {
-                    return {
-                        id: "999",
-                        email: "mock@test.com",
-                        name: "Mock User",
-                    };
-                }
-
                 // Query Supabase for user
                 const { data: user, error } = await supabase
                     .from("users")
