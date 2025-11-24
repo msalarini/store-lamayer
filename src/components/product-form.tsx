@@ -90,6 +90,33 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
         } as any,
     });
 
+    useEffect(() => {
+        if (product) {
+            form.reset({
+                name: product.name,
+                quantity: product.quantity,
+                buyPrice: product.buy_price,
+                sellPrice: product.sell_price,
+                categoryId: product.category_id?.toString() || "",
+                supplierId: product.supplier_id?.toString() || "",
+                expiryDate: product.expiry_date || "",
+                minStockLevel: product.min_stock_level || 10,
+            });
+        } else {
+            form.reset({
+                name: "",
+                quantity: 0,
+                buyPrice: 0,
+                sellPrice: 0,
+                categoryId: "",
+                supplierId: "",
+                expiryDate: "",
+                minStockLevel: 10,
+            });
+        }
+    }, [product, form]);
+
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
         try {
