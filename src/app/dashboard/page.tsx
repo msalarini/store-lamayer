@@ -63,6 +63,7 @@ export default function DashboardPage() {
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
+    const [exchangeRate, setExchangeRate] = useState<number>(1); // Default 1 to avoid division by zero or weird display
 
     // Delete state
     const [productToDelete, setProductToDelete] = useState<{ id: number, name: string } | null>(null);
@@ -174,21 +175,14 @@ export default function DashboardPage() {
         setProductToDelete(null);
     };
 
-    // Helper function to get expiry status
-    const getExpiryStatus = (expiryDate: string | null) => {
-        if (!expiryDate) return null;
-        const today = new Date();
-        const expiry = new Date(expiryDate);
-        const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    // Helper function to format currency
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    };
 
-        if (daysUntilExpiry < 0) {
-            return { status: "vencido", variant: "destructive" as const, text: "Vencido" };
-        } else if (daysUntilExpiry <= 7) {
-            return { status: "alerta", variant: "destructive" as const, text: `${daysUntilExpiry}d` };
-        } else if (daysUntilExpiry <= 30) {
-            return { status: "proximo", variant: "default" as const, text: `${daysUntilExpiry}d` };
-        }
-        return null;
+    const formatGuarani = (value: number) => {
+        const pyValue = value * exchangeRate;
+        return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(pyValue);
     };
 
     if (status === "loading") {
@@ -237,6 +231,15 @@ export default function DashboardPage() {
                             📊 Analytics
                         </Button>
                         <ThemeToggle />
+                        <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md border">
+                            <span className="text-sm font-medium whitespace-nowrap">Cotação G$:</span>
+                            <Input
+                                type="number"
+                                value={exchangeRate}
+                                onChange={(e) => setExchangeRate(Number(e.target.value))}
+                                className="w-24 h-8"
+                            />
+                        </div>
                         <Button variant="ghost" size="icon" onClick={() => signOut()}>
                             <LogOut className="h-5 w-5" />
                         </Button>
@@ -386,9 +389,9 @@ export default function DashboardPage() {
                                     <TableHead>Categoria</TableHead>
                                     <TableHead>Fornecedor</TableHead>
                                     <TableHead>Estoque</TableHead>
-                                    <TableHead>Validade</TableHead>
                                     <TableHead>Preço Compra</TableHead>
-                                    <TableHead>Preço Venda</TableHead>
+                                    <TableHead>Venda (Un.)</TableHead>
+                                    <TableHead>Venda (Atacado)</TableHead>
                                     <TableHead>Lucro Unit.</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
@@ -404,7 +407,6 @@ export default function DashboardPage() {
                                     </TableRow>
                                 ) : (
                                     filteredProducts.map((product) => {
-                                        const expiryStatus = getExpiryStatus(product.expiry_date);
                                         const isLowStock = product.quantity < (product.min_stock_level || 10);
                                         const unitProfit = (product.sell_price || 0) - (product.buy_price || 0);
                                         const profitMargin = product.buy_price > 0
@@ -435,17 +437,26 @@ export default function DashboardPage() {
                                                     </span>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {expiryStatus && (
-                                                        <Badge variant={expiryStatus.variant}>
-                                                            {expiryStatus.text}
-                                                        </Badge>
-                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span>{formatCurrency(product.buy_price || 0)}</span>
+                                                        <span className="text-xs text-muted-foreground">{formatGuarani(product.buy_price || 0)}</span>
+                                                    </div>
                                                 </TableCell>
-                                                <TableCell>R$ {product.buy_price?.toFixed(2)}</TableCell>
-                                                <TableCell>R$ {product.sell_price?.toFixed(2)}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">{formatCurrency(product.sell_price || 0)}</span>
+                                                        <span className="text-xs text-muted-foreground">{formatGuarani(product.sell_price || 0)}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span>{formatCurrency(product.wholesale_price || 0)}</span>
+                                                        <span className="text-xs text-muted-foreground">{formatGuarani(product.wholesale_price || 0)}</span>
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>
                                                     <span className={unitProfit >= 0 ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500"}>
-                                                        R$ {unitProfit.toFixed(2)}
+                                                        {formatCurrency(unitProfit)}
                                                         <span className="text-xs text-muted-foreground ml-1">
                                                             ({profitMargin.toFixed(0)}%)
                                                         </span>

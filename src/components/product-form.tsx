@@ -31,9 +31,9 @@ const formSchema = z.object({
     quantity: z.coerce.number().min(0, { message: "A quantidade deve ser maior ou igual a 0." }),
     buyPrice: z.coerce.number().min(0, { message: "O preço de compra deve ser maior ou igual a 0." }),
     sellPrice: z.coerce.number().min(0, { message: "O preço de venda deve ser maior ou igual a 0." }),
+    wholesalePrice: z.coerce.number().min(0, { message: "O preço de atacado deve ser maior ou igual a 0." }),
     categoryId: z.string().optional(),
     supplierId: z.string().optional(),
-    expiryDate: z.string().optional(),
     minStockLevel: z.coerce.number().min(0).optional(),
 });
 
@@ -83,9 +83,9 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
             quantity: product?.quantity || 0,
             buyPrice: product?.buy_price || 0,
             sellPrice: product?.sell_price || 0,
+            wholesalePrice: product?.wholesale_price || 0,
             categoryId: product?.category_id?.toString() || "",
             supplierId: product?.supplier_id?.toString() || "",
-            expiryDate: product?.expiry_date || "",
             minStockLevel: product?.min_stock_level || 10,
         } as any,
     });
@@ -97,9 +97,9 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                 quantity: product.quantity,
                 buyPrice: product.buy_price,
                 sellPrice: product.sell_price,
+                wholesalePrice: product.wholesale_price || 0,
                 categoryId: product.category_id?.toString() || "",
                 supplierId: product.supplier_id?.toString() || "",
-                expiryDate: product.expiry_date || "",
                 minStockLevel: product.min_stock_level || 10,
             });
         } else {
@@ -108,9 +108,9 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                 quantity: 0,
                 buyPrice: 0,
                 sellPrice: 0,
+                wholesalePrice: 0,
                 categoryId: "",
                 supplierId: "",
-                expiryDate: "",
                 minStockLevel: 10,
             });
         }
@@ -125,9 +125,9 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                 quantity: values.quantity,
                 buy_price: values.buyPrice,
                 sell_price: values.sellPrice,
+                wholesale_price: values.wholesalePrice,
                 category_id: values.categoryId ? parseInt(values.categoryId) : null,
                 supplier_id: values.supplierId ? parseInt(values.supplierId) : null,
-                expiry_date: values.expiryDate || null,
                 min_stock_level: values.minStockLevel || 10,
             };
 
@@ -251,21 +251,7 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                     />
                 </div>
 
-                <FormField
-                    control={form.control}
-                    name="expiryDate"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Data de Validade</FormLabel>
-                            <FormControl>
-                                <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <FormField
                         control={form.control}
                         name="buyPrice"
@@ -284,7 +270,20 @@ export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps)
                         name="sellPrice"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Preço de Venda</FormLabel>
+                                <FormLabel>Preço Venda (Unitário)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="wholesalePrice"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Preço Venda (Atacado)</FormLabel>
                                 <FormControl>
                                     <Input type="number" step="0.01" placeholder="0.00" {...field} />
                                 </FormControl>

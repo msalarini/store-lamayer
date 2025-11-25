@@ -145,11 +145,11 @@ export default function AnalyticsPage() {
             Categoria: p.category?.name || "Sem Categoria",
             Quantidade: p.quantity,
             "Preço Compra": p.buy_price,
-            "Preço Venda": p.sell_price,
+            "Preço Venda (Un.)": p.sell_price,
+            "Preço Venda (Atacado)": p.wholesale_price || 0,
             "Lucro Unit.": p.sell_price - p.buy_price,
             "Margem %": ((p.sell_price - p.buy_price) / p.buy_price * 100).toFixed(2),
-            "Estoque Mínimo": p.min_stock_level || 10,
-            Validade: p.expiry_date || "N/A"
+            "Estoque Mínimo": p.min_stock_level || 10
         })));
 
         const workbook = XLSX.utils.book_new();
