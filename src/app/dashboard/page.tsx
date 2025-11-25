@@ -63,7 +63,7 @@ export default function DashboardPage() {
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
-    const [exchangeRate, setExchangeRate] = useState<number>(1); // Default 1 to avoid division by zero or weird display
+    const [exchangeRate, setExchangeRate] = useState<string>("1"); // Use string to handle empty state
 
     // Delete state
     const [productToDelete, setProductToDelete] = useState<{ id: number, name: string } | null>(null);
@@ -181,7 +181,8 @@ export default function DashboardPage() {
     };
 
     const formatGuarani = (value: number) => {
-        const pyValue = value * exchangeRate;
+        const rate = parseFloat(exchangeRate) || 0;
+        const pyValue = value * rate;
         return new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(pyValue);
     };
 
@@ -221,33 +222,17 @@ export default function DashboardPage() {
                         <Button variant="outline" onClick={() => router.push("/suppliers")}>
                             🏭 Fornecedores
                         </Button>
-                        <Button variant="outline" onClick={() => router.push("/barcodes")}>
-                            🏷️ Etiquetas
-                        </Button>
-                        <Button variant="outline" onClick={() => router.push("/backup")}>
-                            🛡️ Backup
-                        </Button>
-                        <Button variant="outline" onClick={() => router.push("/analytics")}>
-                            📊 Analytics
-                        </Button>
-                        <ThemeToggle />
-                        <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md border">
-                            <span className="text-sm font-medium whitespace-nowrap">Cotação G$:</span>
-                            <Input
-                                type="number"
-                                value={exchangeRate}
-                                onChange={(e) => setExchangeRate(Number(e.target.value))}
-                                className="w-24 h-8"
-                            />
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => signOut()}>
-                            <LogOut className="h-5 w-5" />
-                        </Button>
+                        <span className="text-sm font-medium whitespace-nowrap">🇵🇾 Cotação Guarani:</span>
+                        <Input
+                            type="number"
+                            value={exchangeRate}
+                            onChange={(e) => setExchangeRate(e.target.value)}
+                            placeholder="0"
+                            className="w-32 h-9"
+                        />
                     </div>
                 </div>
-            </div>
 
-            <div className="container mx-auto px-4 py-8 space-y-8">
                 {/* Financial Stats Cards */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Card>
