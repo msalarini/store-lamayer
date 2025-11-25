@@ -222,6 +222,28 @@ export default function DashboardPage() {
                         <Button variant="outline" onClick={() => router.push("/suppliers")}>
                             🏭 Fornecedores
                         </Button>
+                        <Button variant="outline" onClick={() => router.push("/barcodes")}>
+                            🏷️ Etiquetas
+                        </Button>
+                        <Button variant="outline" onClick={() => router.push("/backup")}>
+                            🛡️ Backup
+                        </Button>
+                        <Button variant="outline" onClick={() => router.push("/analytics")}>
+                            📊 Analytics
+                        </Button>
+                        <ThemeToggle />
+                        <Button variant="ghost" size="icon" onClick={() => signOut()}>
+                            <LogOut className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="container mx-auto px-4 py-8 space-y-8">
+                {/* Exchange Rate Control */}
+                <div className="flex justify-end">
+                    <div className="flex items-center gap-2 bg-card p-2 rounded-md border shadow-sm">
                         <span className="text-sm font-medium whitespace-nowrap">🇵🇾 Cotação Guarani:</span>
                         <Input
                             type="number"
