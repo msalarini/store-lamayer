@@ -1,135 +1,81 @@
 # 🌶️ Store Lamayer
 
-Sistema de gestão de estoque para comércio de especiarias, desenvolvido com Next.js e Supabase.
+Sistema de gestão de estoque e controle financeiro para comércio de especiarias, desenvolvido com foco em performance, usabilidade e dados em tempo real.
 
-## 🚀 Funcionalidades Atuais
+## 🏗️ Arquitetura e Tecnologias
 
-- ✅ **Autenticação**: Login com Google e Microsoft OAuth
-- ✅ **Gestão de Produtos**: CRUD completo (Criar, Ler, Atualizar, Excluir)
-- ✅ **Dashboard**: Estatísticas em tempo real
-  - Total de produtos
-  - Estoque total  
-  - Valor do inventário
-  - Histórico de atividades
-- ✅ **Tema Claro/Escuro**: Interface adaptável com tema verde
-- ✅ **Registro de Logs**: Auditoria de todas as ações
-- ✅ **Interface em Português**: 100% traduzida para facilitar uso
+O projeto utiliza uma arquitetura moderna baseada em **Next.js 15 (App Router)** e **Server Components**, garantindo alta performance e SEO otimizado.
 
-## 🛠️ Tecnologias
+### Stack Principal
+-   **Frontend**: [Next.js 15](https://nextjs.org/), [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
+-   **Estilização**: [Tailwind CSS](https://tailwindcss.com/)
+-   **Componentes UI**: [Shadcn UI](https://ui.shadcn.com/) (baseado em Radix UI)
+-   **Ícones**: [Lucide React](https://lucide.dev/)
+-   **Backend / Database**: [Supabase](https://supabase.com/) (PostgreSQL + Auth + Realtime)
+-   **Autenticação**: [NextAuth.js](https://next-auth.js.org/) (OAuth Google/Microsoft)
+-   **Validação**: [Zod](https://zod.dev/) + [React Hook Form](https://react-hook-form.com/)
 
-- **Frontend**: Next.js 16, React 19, TypeScript
-- **UI**: Shadcn UI, Tailwind CSS, Lucide Icons
-- **Backend**: Supabase (PostgreSQL)
-- **Autenticação**: NextAuth.js
-- **Formulários**: React Hook Form + Zod
-- **Notificações**: Sonner
+### Estrutura do Projeto
 
-## 📋 Pré-requisitos
-
-- Node.js 18+ instalado
-- Conta no Supabase (grátis)
-- Credenciais OAuth do Google/Microsoft (opcional, tem modo dev)
-
-## ⚙️ Instalação
-
-1. Clone o repositório:
-```bash
-git clone https://github.com/SEU_USUARIO/store-lamayer.git
-cd store-lamayer
+```
+store-lamayer/
+├── database/              # Scripts de migração e schemas do banco de dados
+├── src/
+│   ├── app/               # Rotas e páginas (App Router)
+│   │   ├── analytics/     # Página de relatórios e exportação
+│   │   ├── dashboard/     # Painel principal
+│   │   ├── api/           # API Routes (NextAuth, etc.)
+│   │   └── ...
+│   ├── components/        # Componentes reutilizáveis (UI, Forms, etc.)
+│   ├── lib/               # Utilitários e configurações (Supabase client, utils)
+│   └── types/             # Definições de tipos TypeScript
+├── public/                # Assets estáticos
+└── ...
 ```
 
-2. Instale as dependências:
-```bash
-npm install
-```
+## 🚀 Funcionalidades Principais
 
-3. Configure as variáveis de ambiente:
+-   **Dashboard Interativo**: Visão geral de estoque, capital investido, lucro projetado e cotação do Guarani em tempo real.
+-   **Gestão de Produtos**: CRUD completo com suporte a preços de atacado/varejo e conversão automática de moeda.
+-   **Analytics**: Relatórios detalhados e exportação de dados para Excel.
+-   **Etiquetas e Códigos de Barra**: Geração automática de etiquetas para impressão.
+-   **Backup e Segurança**: Logs de auditoria e ferramentas de backup.
 
-Crie um arquivo `.env.local` na raiz do projeto:
+## ⚙️ Configuração e Instalação
 
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+### Pré-requisitos
+-   Node.js 18+
+-   Conta no Supabase
 
-# NextAuth
-NEXTAUTH_SECRET=gere_uma_chave_secreta_aqui
-NEXTAUTH_URL=http://localhost:3000
+### Passo a Passo
 
-# OAuth (opcional)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-AZURE_AD_CLIENT_ID=
-AZURE_AD_CLIENT_SECRET=
-AZURE_AD_TENANT_ID=
-```
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/SEU_USUARIO/store-lamayer.git
+    cd store-lamayer
+    ```
 
-4. Execute o script SQL no Supabase:
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
 
-Acesse o SQL Editor do Supabase e execute o conteúdo de `supabase_schema.sql`
+3.  **Configure as variáveis de ambiente:**
+    Crie um arquivo `.env.local` na raiz com as chaves do Supabase e NextAuth (veja `.env.example`).
 
-5. Inicie o servidor de desenvolvimento:
-```bash
-npm run dev
-```
+4.  **Banco de Dados:**
+    Execute os scripts SQL localizados na pasta `database/` no SQL Editor do seu projeto Supabase para criar as tabelas necessárias.
 
-6. Acesse http://localhost:3000
-
-## 🔐 Modo Desenvolvedor
-
-Se as credenciais OAuth não estiverem configuradas, use o modo desenvolvedor na página de login:
-- Digite um email permitido: `marcussalarini@gmail.com` ou `llamayer@hotmail.com`
-- Clique em "Entrar (Dev)"
+5.  **Execute o projeto:**
+    ```bash
+    npm run dev
+    ```
+    Acesse `http://localhost:3000`.
 
 ## 📦 Deploy
 
-### Vercel (Recomendado)
-
-1. Faça push do código para o GitHub
-2. Importe o projeto no [Vercel](https://vercel.com)
-3. Configure as variáveis de ambiente
-4. Deploy automático! 🚀
-
-## 🎯 Roadmap - Próximas Funcionalidades
-
-### 📊 Fase 1 - Organização (Essencial)
-- [ ] Sistema de categorias para especiarias
-- [ ] Busca e filtros avançados
-- [ ] Controle de data de validade
-- [ ] Alertas visuais de estoque baixo
-
-### 💰 Fase 2 - Gestão Financeira
-- [ ] Relatórios de lucro e margem
-- [ ] Análise de produtos mais/menos lucrativos
-- [ ] Histórico de preços
-- [ ] Dashboard financeiro
-
-### 📈 Fase 3 - Analytics
-- [ ] Gráficos de vendas
-- [ ] Tendências de estoque
-- [ ] Produtos mais vendidos
-- [ ] Exportação para Excel/CSV
-
-### 🏭 Fase 4 - Fornecedores
-- [ ] Cadastro de fornecedores
-- [ ] Vincular produtos a fornecedores
-- [ ] Histórico de compras
-- [ ] Comparação de preços
-
-### 🎨 Fase 5 - Extras
-- [ ] Impressão de etiquetas de preço
-- [ ] Código de barras
-- [ ] App mobile PWA
-- [ ] Backup automático
-
-## 📝 Licença
-
-MIT
-
-## 👥 Desenvolvido por
-
-Marcus Salarini para Store Lamayer - Comércio de Especiarias
+O projeto está otimizado para deploy na **Vercel**. Basta conectar o repositório e configurar as variáveis de ambiente.
 
 ---
 
-💚 Desenvolvido com amor usando Next.js e Supabase
+**Store Lamayer** - Desenvolvido por Marcus Salarini
