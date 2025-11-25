@@ -5,21 +5,32 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { ShoppingCart, Search, Plus, Minus, Printer, ArrowLeft } from "lucide-react";
+import {
+    ShoppingCart, Search, Plus, Minus, Printer, ArrowLeft,
+    X, Store, Tag, ShoppingBag
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetFooter,
+} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { printOrder } from "@/lib/printer";
 
 interface Product {
@@ -47,7 +58,7 @@ export default function PedidosPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [exchangeRate, setExchangeRate] = useState<string>("1350");
-    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isCartOpen, setIsCartOpen] = useState(false);
     const [customerName, setCustomerName] = useState("");
     const [customerPhone, setCustomerPhone] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
@@ -123,12 +134,13 @@ export default function PedidosPage() {
         } else {
             setCart([...cart, { product, quantity: 1 }]);
         }
-        toast.success(`${product.name} adicionado ao carrinho`);
+        toast.success(`${product.name} adicionado`, { duration: 1000 });
     };
 
     const updateQuantity = (productId: number, newQuantity: number) => {
         if (newQuantity === 0) {
             setCart(cart.filter(item => item.product.id !== productId));
+            toast.info("Item removido do carrinho");
         } else {
             setCart(cart.map(item =>
                 item.product.id === productId
@@ -136,6 +148,11 @@ export default function PedidosPage() {
                     : item
             ));
         }
+    };
+
+    const clearCart = () => {
+        setCart([]);
+        toast.info("Carrinho limpo");
     };
 
     const getCartQuantity = (productId: number) => {
@@ -153,11 +170,19 @@ export default function PedidosPage() {
         return { totalBRL, totalPYG };
     };
 
+    const formatBRL = (value: number) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value);
+    };
+
     const formatPYG = (value: number) => {
         const rate = parseFloat(exchangeRate) || 0;
         return new Intl.NumberFormat('es-PY', {
             style: 'currency',
-            currency: 'PYG'
+            currency: 'PYG',
+            maximumFractionDigits: 0
         }).format(value * rate);
     };
 
@@ -173,13 +198,11 @@ export default function PedidosPage() {
             const rate = parseFloat(exchangeRate) || 1;
             const { totalBRL, totalPYG } = calculateTotal();
 
-            // Gerar número do pedido
             const { data: orderNumberData } = await supabase
                 .rpc('generate_order_number');
 
             const orderNumber = orderNumberData || `ORD-${Date.now()}`;
 
-            // Criar pedido
             const { data: orderData, error: orderError } = await supabase
                 .from("orders")
                 .insert({
@@ -197,7 +220,6 @@ export default function PedidosPage() {
 
             if (orderError) throw orderError;
 
-            // Criar itens do pedido
             const orderItems = cart.map(item => ({
                 order_id: orderData.id,
                 product_id: item.product.id,
@@ -215,16 +237,14 @@ export default function PedidosPage() {
 
             if (itemsError) throw itemsError;
 
-            // Registrar log
             await supabase.from("logs").insert({
                 action: "PEDIDO",
                 details: `Pedido criado: ${orderNumber} - Total: R$ ${totalBRL.toFixed(2)}`,
                 user_email: session?.user?.email,
             });
 
-            toast.success(`Pedido ${orderNumber} criado com sucesso!`);
+            toast.success(`Pedido ${orderNumber} criado!`);
 
-            // Chamar impressão
             const printResult = await printOrder({
                 orderNumber,
                 customerName: customerName || undefined,
@@ -249,14 +269,10 @@ export default function PedidosPage() {
                 toast.warning(`Pedido salvo, mas impressão falhou: ${printResult.error}`);
             }
 
-            // Limpar carrinho e fechar modal
             setCart([]);
             setCustomerName("");
             setCustomerPhone("");
-            setIsCheckoutOpen(false);
-
-            // TODO: Chamar impressão aqui
-            // await printOrder(orderData, orderItems);
+            setIsCartOpen(false);
 
         } catch (error: any) {
             console.error("Erro ao criar pedido:", error);
@@ -270,37 +286,62 @@ export default function PedidosPage() {
     const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     if (status === "loading") {
-        return <div className="flex justify-center items-center h-screen">Carregando...</div>;
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="text-center space-y-4">
+                    <ShoppingBag className="h-12 w-12 mx-auto animate-pulse text-primary" />
+                    <p className="text-muted-foreground">Carregando...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="flex flex-col h-screen bg-background">
             {/* Header */}
-            <div className="border-b sticky top-0 bg-background z-10">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")}>
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                            <div>
-                                <h1 className="text-2xl font-bold">🛒 Novo Pedido</h1>
-                                <p className="text-sm text-muted-foreground">Selecione os produtos</p>
-                            </div>
+            <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="container flex h-16 items-center justify-between px-4">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push("/dashboard")}
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-lg font-semibold">Novo Pedido</h1>
+                            <p className="text-xs text-muted-foreground hidden sm:block">
+                                Selecione os produtos
+                            </p>
                         </div>
-                        <Badge variant="secondary" className="text-lg px-4 py-2">
-                            {cartItemCount} {cartItemCount === 1 ? "item" : "itens"}
-                        </Badge>
                     </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCartOpen(true)}
+                        className="relative gap-2"
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        <span className="hidden sm:inline">Carrinho</span>
+                        {cartItemCount > 0 && (
+                            <Badge
+                                variant="destructive"
+                                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center"
+                            >
+                                {cartItemCount}
+                            </Badge>
+                        )}
+                    </Button>
                 </div>
-            </div>
+            </header>
 
-            <div className="container mx-auto px-4 py-6 space-y-6">
-                {/* Busca e Filtros */}
-                <Card>
-                    <CardContent className="pt-6 space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            {/* Filters */}
+            <div className="border-b bg-muted/40 p-4 space-y-3">
+                <div className="container">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Buscar produtos..."
                                 value={searchTerm}
@@ -308,13 +349,13 @@ export default function PedidosPage() {
                                 className="pl-10"
                             />
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2">
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                <SelectTrigger>
+                                <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Categoria" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Todas Categorias</SelectItem>
+                                    <SelectItem value="all">Todas</SelectItem>
                                     {categories.map((cat) => (
                                         <SelectItem key={cat.id} value={cat.name}>
                                             {cat.icon} {cat.name}
@@ -322,207 +363,258 @@ export default function PedidosPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">Taxa G$:</span>
+                            <div className="flex items-center gap-2 px-3 border rounded-md bg-background">
+                                <Tag className="h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="number"
                                     value={exchangeRate}
                                     onChange={(e) => setExchangeRate(e.target.value)}
-                                    className="w-24"
+                                    className="w-20 border-0 p-0 h-auto focus-visible:ring-0"
+                                    placeholder="Taxa"
                                 />
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-
-                {/* Lista de Produtos */}
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredProducts.map((product) => {
-                        const cartQty = getCartQuantity(product.id);
-
-                        return (
-                            <Card key={product.id} className="hover:shadow-md transition-shadow">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                                    {product.category && (
-                                        <Badge variant="outline" className="w-fit">
-                                            {product.category.icon} {product.category.name}
-                                        </Badge>
-                                    )}
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">Preço:</span>
-                                            <span className="font-semibold">R$ {product.sell_price.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Guarani:</span>
-                                            <span>{formatPYG(product.sell_price)}</span>
-                                        </div>
-                                    </div>
-
-                                    {cartQty === 0 ? (
-                                        <Button
-                                            onClick={() => addToCart(product)}
-                                            className="w-full"
-                                            size="sm"
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Adicionar
-                                        </Button>
-                                    ) : (
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => updateQuantity(product.id, cartQty - 1)}
-                                            >
-                                                <Minus className="h-4 w-4" />
-                                            </Button>
-                                            <span className="text-lg font-bold min-w-[2rem] text-center">
-                                                {cartQty}
-                                            </span>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => updateQuantity(product.id, cartQty + 1)}
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
+                    </div>
                 </div>
-
-                {filteredProducts.length === 0 && (
-                    <Card>
-                        <CardContent className="py-12 text-center text-muted-foreground">
-                            Nenhum produto encontrado
-                        </CardContent>
-                    </Card>
-                )}
             </div>
 
-            {/* Carrinho Fixo (Bottom) */}
-            {cart.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4 shadow-lg">
-                    <div className="container mx-auto space-y-3">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Total</p>
-                                <p className="text-2xl font-bold">R$ {totalBRL.toFixed(2)}</p>
-                                <p className="text-sm text-muted-foreground">{formatPYG(totalBRL)}</p>
-                            </div>
-                            <Button
-                                onClick={() => setIsCheckoutOpen(true)}
-                                size="lg"
-                                className="gap-2"
-                            >
-                                <ShoppingCart className="h-5 w-5" />
-                                Finalizar Pedido
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de Checkout */}
-            <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Finalizar Pedido</DialogTitle>
-                        <DialogDescription>
-                            Revise os itens e complete as informações
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-4">
-                        {/* Itens do carrinho */}
+            {/* Products List */}
+            <ScrollArea className="flex-1">
+                <div className="container py-4 px-4">
+                    {filteredProducts.length === 0 ? (
+                        <Card>
+                            <CardContent className="flex flex-col items-center justify-center py-12">
+                                <Store className="h-12w-12 text-muted-foreground mb-4" />
+                                <p className="text-muted-foreground">
+                                    {searchTerm || selectedCategory !== "all"
+                                        ? "Nenhum produto encontrado"
+                                        : "Nenhum produto disponível"}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ) : (
                         <div className="space-y-2">
-                            <h3 className="font-semibold text-sm">Itens do Pedido</h3>
-                            {cart.map((item) => (
-                                <div key={item.product.id} className="flex justify-between text-sm border-b pb-2">
-                                    <div>
-                                        <p className="font-medium">{item.quantity}x {item.product.name}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            R$ {item.product.sell_price.toFixed(2)} / un
+                            {filteredProducts.map((product) => {
+                                const cartQty = getCartQuantity(product.id);
+
+                                return (
+                                    <Card
+                                        key={product.id}
+                                        className="transition-all hover:shadow-md"
+                                    >
+                                        <CardContent className="p-4">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h3 className="font-medium truncate">
+                                                            {product.name}
+                                                        </h3>
+                                                        {product.category && (
+                                                            <Badge variant="secondary" className="text-xs shrink-0">
+                                                                {product.category.icon}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-baseline gap-2 text-sm">
+                                                        <span className="font-semibold text-primary">
+                                                            {formatBRL(product.sell_price)}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {formatPYG(product.sell_price)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {cartQty === 0 ? (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => addToCart(product)}
+                                                        className="shrink-0"
+                                                    >
+                                                        <Plus className="h-4 w-4 mr-1" />
+                                                        Adicionar
+                                                    </Button>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={() => updateQuantity(product.id, cartQty - 1)}
+                                                        >
+                                                            <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <span className="w-8 text-center font-semibold">
+                                                            {cartQty}
+                                                        </span>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={() => updateQuantity(product.id, cartQty + 1)}
+                                                        >
+                                                            <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </ScrollArea>
+
+            {/* Cart Sheet */}
+            <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+                <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col p-0">
+                    <SheetHeader className="px-6 pt-6 pb-4">
+                        <SheetTitle className="flex items-center justify-between">
+                            <span>Carrinho</span>
+                            {cart.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearCart}
+                                >
+                                    Limpar
+                                </Button>
+                            )}
+                        </SheetTitle>
+                        <SheetDescription>
+                            {cart.length === 0
+                                ? "Nenhum item no carrinho"
+                                : `${cartItemCount} ${cartItemCount === 1 ? 'item' : 'itens'}`}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    {cart.length === 0 ? (
+                        <div className="flex-1 flex items-center justify-center p-6">
+                            <div className="text-center space-y-3">
+                                <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground/50" />
+                                <p className="text-muted-foreground">
+                                    Adicione produtos ao carrinho
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <ScrollArea className="flex-1 px-6">
+                                <div className="space-y-4 pb-4">
+                                    {cart.map((item) => (
+                                        <div key={item.product.id} className="space-y-2">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <p className="font-medium">{item.product.name}</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {formatBRL(item.product.sell_price)} × {item.quantity}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-semibold">
+                                                        {formatBRL(item.product.sell_price * item.quantity)}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {formatPYG(item.product.sell_price * item.quantity)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                                >
+                                                    <Minus className="h-3 w-3" />
+                                                </Button>
+                                                <span className="w-8 text-center text-sm">{item.quantity}</span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="ml-auto text-destructive"
+                                                    onClick={() => updateQuantity(item.product.id, 0)}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                            <Separator />
+                                        </div>
+                                    ))}
+
+                                    <div className="space-y-3 pt-2">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="customer-name" className="text-sm">
+                                                Nome do Cliente (Opcional)
+                                            </Label>
+                                            <Input
+                                                id="customer-name"
+                                                placeholder="Nome"
+                                                value={customerName}
+                                                onChange={(e) => setCustomerName(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="customer-phone" className="text-sm">
+                                                Telefone (Opcional)
+                                            </Label>
+                                            <Input
+                                                id="customer-phone"
+                                                placeholder="(00) 00000-0000"
+                                                value={customerPhone}
+                                                onChange={(e) => setCustomerPhone(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </ScrollArea>
+
+                            <SheetFooter className="px-6 py-4 border-t">
+                                <div className="w-full space-y-4">
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between font-bold text-lg">
+                                            <span>Total:</span>
+                                            <span>{formatBRL(totalBRL)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm text-muted-foreground">
+                                            <span>Guarani:</span>
+                                            <span>{formatPYG(totalBRL)}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground text-right">
+                                            Taxa: G$ {exchangeRate} = R$ 1,00
                                         </p>
                                     </div>
-                                    <p className="font-semibold">
-                                        R$ {(item.product.sell_price * item.quantity).toFixed(2)}
-                                    </p>
+                                    <Button
+                                        className="w-full gap-2"
+                                        size="lg"
+                                        onClick={createOrder}
+                                        disabled={isProcessing}
+                                    >
+                                        {isProcessing ? (
+                                            "Processando..."
+                                        ) : (
+                                            <>
+                                                <Printer className="h-4 w-4" />
+                                                Finalizar e Imprimir
+                                            </>
+                                        )}
+                                    </Button>
                                 </div>
-                            ))}
-                        </div>
-
-                        {/* Dados do cliente (opcional) */}
-                        <div className="space-y-3">
-                            <h3 className="font-semibold text-sm">Dados do Cliente (Opcional)</h3>
-                            <div className="space-y-2">
-                                <Label htmlFor="customerName">Nome</Label>
-                                <Input
-                                    id="customerName"
-                                    placeholder="Nome do cliente"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="customerPhone">Telefone</Label>
-                                <Input
-                                    id="customerPhone"
-                                    placeholder="(00) 00000-0000"
-                                    value={customerPhone}
-                                    onChange={(e) => setCustomerPhone(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Total */}
-                        <div className="border-t pt-3 space-y-1">
-                            <div className="flex justify-between font-bold text-lg">
-                                <span>Total (BRL):</span>
-                                <span>R$ {totalBRL.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                                <span>Total (PYG):</span>
-                                <span>{formatPYG(totalBRL)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Taxa: G$ {exchangeRate} = R$ 1,00
-                            </p>
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsCheckoutOpen(false)}
-                            disabled={isProcessing}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={createOrder}
-                            disabled={isProcessing}
-                            className="gap-2"
-                        >
-                            {isProcessing ? (
-                                "Processando..."
-                            ) : (
-                                <>
-                                    <Printer className="h-4 w-4" />
-                                    Confirmar e Imprimir
-                                </>
-                            )}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                            </SheetFooter>
+                        </>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }
