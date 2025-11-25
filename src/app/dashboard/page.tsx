@@ -216,6 +216,9 @@ export default function DashboardPage() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" onClick={() => router.push("/pedidos")}>
+                            🛒 Pedidos
+                        </Button>
                         <Button variant="outline" onClick={() => router.push("/categories")}>
                             🗂️ Categorias
                         </Button>

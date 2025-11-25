@@ -1,0 +1,23 @@
+{
+    "name": "thermal-print-server",
+    "version": "1.0.0",
+    "description": "Servidor de impressão térmica para Store Lamayer",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "node index.js"
+    },
+    "keywords": [
+        "thermal",
+        "printer",
+        "escpos"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.18.2",
+        "node-thermal-printer": "^4.4.5",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1"
+    }
+}
