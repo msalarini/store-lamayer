@@ -65,6 +65,10 @@ export default function DashboardPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [exchangeRate, setExchangeRate] = useState<string>("1"); // Use string to handle empty state
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     // Delete state
     const [productToDelete, setProductToDelete] = useState<{ id: number, name: string } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -145,6 +149,7 @@ export default function DashboardPage() {
         }
 
         setFilteredProducts(filtered);
+        setCurrentPage(1); // Reset to first page when filters change
     }, [searchTerm, selectedCategory, products]);
 
     const confirmDelete = (product: { id: number, name: string }) => {
@@ -202,7 +207,20 @@ export default function DashboardPage() {
         ? ((projectedProfit / investedCapital) * 100)
         : 0;
 
+
     const lowStockProducts = filteredProducts.filter(p => p.quantity < (p.min_stock_level || 10)).length;
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+    const goToPage = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -394,14 +412,14 @@ export default function DashboardPage() {
                     <CardContent>
                         {/* Mobile Cards View - Hidden on Desktop */}
                         <div className="md:hidden space-y-3">
-                            {filteredProducts.length === 0 ? (
+                            {paginatedProducts.length === 0 ? (
                                 <div className="text-center text-muted-foreground py-8">
                                     {searchTerm || selectedCategory !== "all"
                                         ? "Nenhum produto encontrado com os filtros aplicados."
                                         : "Nenhum produto cadastrado. Adicione o primeiro produto para começar."}
                                 </div>
                             ) : (
-                                filteredProducts.map((product) => {
+                                paginatedProducts.map((product) => {
                                     const isLowStock = product.quantity < (product.min_stock_level || 10);
                                     const unitProfit = (product.sell_price || 0) - (product.buy_price || 0);
                                     const profitMargin = product.buy_price > 0
@@ -509,7 +527,7 @@ export default function DashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredProducts.length === 0 ? (
+                                {paginatedProducts.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={9} className="text-center text-muted-foreground">
                                             {searchTerm || selectedCategory !== "all"
@@ -518,7 +536,7 @@ export default function DashboardPage() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredProducts.map((product) => {
+                                    paginatedProducts.map((product) => {
                                         const isLowStock = product.quantity < (product.min_stock_level || 10);
                                         const unitProfit = (product.sell_price || 0) - (product.buy_price || 0);
                                         const profitMargin = product.buy_price > 0
@@ -604,6 +622,54 @@ export default function DashboardPage() {
                                 )}
                             </TableBody>
                         </Table>
+
+                        {/* Pagination Controls */}
+                        {filteredProducts.length > 0 && (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                                <div className="text-sm text-muted-foreground">
+                                    Mostrando {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} de {filteredProducts.length} produtos
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToPage(1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Primeira
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToPage(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Anterior
+                                    </Button>
+                                    <div className="flex items-center gap-2 px-3">
+                                        <span className="text-sm font-medium">
+                                            Página {currentPage} de {totalPages}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToPage(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Próxima
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToPage(totalPages)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Última
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
