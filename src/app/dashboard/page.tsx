@@ -68,6 +68,8 @@ export default function DashboardPage() {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [currentLogsPage, setCurrentLogsPage] = useState(1);
+    const logsPerPage = 5;
 
     // Delete state
     const [productToDelete, setProductToDelete] = useState<{ id: number, name: string } | null>(null);
@@ -219,6 +221,18 @@ export default function DashboardPage() {
     const goToPage = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
+        }
+    };
+
+    // Logs pagination calculations
+    const totalLogsPages = Math.ceil(logs.length / logsPerPage);
+    const logsStartIndex = (currentLogsPage - 1) * logsPerPage;
+    const logsEndIndex = logsStartIndex + logsPerPage;
+    const paginatedLogs = logs.slice(logsStartIndex, logsEndIndex);
+
+    const goToLogsPage = (page: number) => {
+        if (page >= 1 && page <= totalLogsPages) {
+            setCurrentLogsPage(page);
         }
     };
 
@@ -690,14 +704,14 @@ export default function DashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {logs.length === 0 ? (
+                                {paginatedLogs.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center text-muted-foreground">
                                             Nenhuma atividade registrada.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    logs.map((log) => (
+                                    paginatedLogs.map((log) => (
                                         <TableRow key={log.id}>
                                             <TableCell className="font-medium">{log.action}</TableCell>
                                             <TableCell>{log.details}</TableCell>
@@ -708,6 +722,54 @@ export default function DashboardPage() {
                                 )}
                             </TableBody>
                         </Table>
+
+                        {/* Logs Pagination Controls */}
+                        {logs.length > 0 && (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                                <div className="text-sm text-muted-foreground">
+                                    Mostrando {logsStartIndex + 1}-{Math.min(logsEndIndex, logs.length)} de {logs.length} atividades
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToLogsPage(1)}
+                                        disabled={currentLogsPage === 1}
+                                    >
+                                        Primeira
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToLogsPage(currentLogsPage - 1)}
+                                        disabled={currentLogsPage === 1}
+                                    >
+                                        Anterior
+                                    </Button>
+                                    <div className="flex items-center gap-2 px-3">
+                                        <span className="text-sm font-medium">
+                                            Página {currentLogsPage} de {totalLogsPages}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToLogsPage(currentLogsPage + 1)}
+                                        disabled={currentLogsPage === totalLogsPages}
+                                    >
+                                        Próxima
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => goToLogsPage(totalLogsPages)}
+                                        disabled={currentLogsPage === totalLogsPages}
+                                    >
+                                        Última
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
