@@ -297,7 +297,7 @@ export default function PedidosPage() {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col h-screen bg-background overflow-hidden">
             {/* Header */}
             <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between px-4">
@@ -337,8 +337,8 @@ export default function PedidosPage() {
             </header>
 
             {/* Filters */}
-            <div className="border-b bg-muted/40 p-4 space-y-3">
-                <div className="container">
+            <div className="border-b bg-muted/40 p-3 sm:p-4">
+                <div className="w-full max-w-full px-3 sm:px-4 mx-auto">
                     <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -380,7 +380,7 @@ export default function PedidosPage() {
 
             {/* Products List */}
             <ScrollArea className="flex-1">
-                <div className="container py-4 px-4">
+                <div className="w-full max-w-full px-3 py-3 sm:px-4 sm:py-4 mx-auto">
                     {filteredProducts.length === 0 ? (
                         <Card>
                             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -393,67 +393,71 @@ export default function PedidosPage() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5 sm:space-y-2">
                             {filteredProducts.map((product) => {
                                 const cartQty = getCartQuantity(product.id);
 
                                 return (
                                     <Card
                                         key={product.id}
-                                        className="transition-all hover:shadow-md"
+                                        className="transition-all hover:shadow-md w-full"
                                     >
-                                        <CardContent className="p-4">
-                                            <div className="flex items-center justify-between gap-4">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <h3 className="font-medium truncate">
-                                                            {product.name}
-                                                        </h3>
-                                                        {product.category && (
-                                                            <Badge variant="secondary" className="text-xs shrink-0">
-                                                                {product.category.icon}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-baseline gap-2 text-sm">
-                                                        <span className="font-semibold text-primary">
-                                                            {formatBRL(product.sell_price)}
-                                                        </span>
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {formatPYG(product.sell_price)}
-                                                        </span>
+                                        <CardContent className="p-3 sm:p-4">
+                                            <div className="space-y-3">
+                                                {/* Product Info */}
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                            <h3 className="font-medium text-sm sm:text-base">
+                                                                {product.name}
+                                                            </h3>
+                                                            {product.category && (
+                                                                <Badge variant="secondary" className="text-xs shrink-0">
+                                                                    {product.category.icon}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-baseline gap-2 flex-wrap">
+                                                            <span className="font-semibold text-primary text-base">
+                                                                {formatBRL(product.sell_price)}
+                                                            </span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {formatPYG(product.sell_price)}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
+                                                {/* Action Buttons */}
                                                 {cartQty === 0 ? (
                                                     <Button
-                                                        size="sm"
+                                                        size="default"
                                                         onClick={() => addToCart(product)}
-                                                        className="shrink-0"
+                                                        className="w-full gap-2"
                                                     >
-                                                        <Plus className="h-4 w-4 mr-1" />
-                                                        Adicionar
+                                                        <Plus className="h-4 w-4" />
+                                                        Adicionar ao Carrinho
                                                     </Button>
                                                 ) : (
-                                                    <div className="flex items-center gap-2 shrink-0">
+                                                    <div className="flex items-center justify-center gap-3 py-1">
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
-                                                            className="h-8 w-8"
+                                                            className="h-10 w-10"
                                                             onClick={() => updateQuantity(product.id, cartQty - 1)}
                                                         >
-                                                            <Minus className="h-3 w-3" />
+                                                            <Minus className="h-4 w-4" />
                                                         </Button>
-                                                        <span className="w-8 text-center font-semibold">
+                                                        <span className="min-w-[4rem] text-center font-semibold text-lg">
                                                             {cartQty}
                                                         </span>
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
-                                                            className="h-8 w-8"
+                                                            className="h-10 w-10"
                                                             onClick={() => updateQuantity(product.id, cartQty + 1)}
                                                         >
-                                                            <Plus className="h-3 w-3" />
+                                                            <Plus className="h-4 w-4" />
                                                         </Button>
                                                     </div>
                                                 )}
