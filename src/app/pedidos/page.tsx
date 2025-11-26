@@ -433,7 +433,7 @@ export default function PedidosPage() {
                                                     <Button
                                                         size="default"
                                                         onClick={() => addToCart(product)}
-                                                        className="w-full gap-2"
+                                                        className="w-full sm:w-auto gap-2"
                                                     >
                                                         <Plus className="h-4 w-4" />
                                                         Adicionar ao Carrinho
