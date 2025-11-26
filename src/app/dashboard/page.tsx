@@ -392,7 +392,109 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
+                        {/* Mobile Cards View - Hidden on Desktop */}
+                        <div className="md:hidden space-y-3">
+                            {filteredProducts.length === 0 ? (
+                                <div className="text-center text-muted-foreground py-8">
+                                    {searchTerm || selectedCategory !== "all"
+                                        ? "Nenhum produto encontrado com os filtros aplicados."
+                                        : "Nenhum produto cadastrado. Adicione o primeiro produto para começar."}
+                                </div>
+                            ) : (
+                                filteredProducts.map((product) => {
+                                    const isLowStock = product.quantity < (product.min_stock_level || 10);
+                                    const unitProfit = (product.sell_price || 0) - (product.buy_price || 0);
+                                    const profitMargin = product.buy_price > 0
+                                        ? ((unitProfit / product.buy_price) * 100)
+                                        : 0;
+                                    const rate = parseFloat(exchangeRate) || 0;
+
+                                    return (
+                                        <Card key={product.id} className="p-4">
+                                            <div className="space-y-3">
+                                                {/* Product Header */}
+                                                <div className="flex justify-between items-start gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold text-base truncate">{product.name}</h3>
+                                                        {product.category && (
+                                                            <Badge variant="outline" className="mt-1">
+                                                                {product.category.icon} {product.category.name}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => {
+                                                                setEditingProduct(product);
+                                                                setIsDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-red-500"
+                                                            onClick={() => confirmDelete(product)}
+                                                        >
+                                                            <Trash className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Product Details Grid */}
+                                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Estoque</p>
+                                                        <p className={`font-semibold ${isLowStock ? 'text-red-500' : ''}`}>
+                                                            {product.quantity}
+                                                            {isLowStock && <AlertTriangle className="inline h-3 w-3 ml-1" />}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Preço Compra</p>
+                                                        <p className="font-semibold">R$ {product.buy_price?.toFixed(2)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Venda (Un.)</p>
+                                                        <div>
+                                                            <p className="font-semibold text-primary">R$ {product.sell_price?.toFixed(2)}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                G$ {((product.sell_price || 0) * rate).toFixed(0)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground">Venda (Atac.)</p>
+                                                        <div>
+                                                            <p className="font-semibold text-primary">R$ {product.wholesale_price?.toFixed(2)}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                G$ {((product.wholesale_price || 0) * rate).toFixed(0)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Profit Info */}
+                                                <div className="pt-2 border-t">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-muted-foreground">Lucro Unit.:</span>
+                                                        <span className={unitProfit >= 0 ? "text-green-600 dark:text-green-500 font-semibold" : "text-red-600 dark:text-red-500 font-semibold"}>
+                                                            R$ {unitProfit.toFixed(2)} ({profitMargin.toFixed(0)}%)
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {/* Desktop Table View - Hidden on Mobile */}
+                        <Table className="hidden md:table">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Nome</TableHead>
