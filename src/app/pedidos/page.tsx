@@ -150,6 +150,11 @@ export default function PedidosPage() {
         }
     };
 
+    const removeFromCart = (productId: number) => {
+        setCart(cart.filter(item => item.product.id !== productId));
+        toast.info("Item removido do carrinho");
+    };
+
     const clearCart = () => {
         setCart([]);
         toast.info("Carrinho limpo");
@@ -320,7 +325,7 @@ export default function PedidosPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setIsCartOpen(true)}
-                        className="relative gap-2"
+                        className="relative gap-2 lg:hidden"
                     >
                         <ShoppingCart className="h-4 w-4" />
                         <span className="hidden sm:inline">Carrinho</span>
@@ -378,47 +383,47 @@ export default function PedidosPage() {
                 </div>
             </div>
 
-            {/* Products List */}
-            <ScrollArea className="flex-1">
-                <div className="w-full max-w-full px-3 py-3 sm:px-4 sm:py-4 mx-auto">
-                    {filteredProducts.length === 0 ? (
-                        <Card>
-                            <CardContent className="flex flex-col items-center justify-center py-12">
-                                <Store className="h-12w-12 text-muted-foreground mb-4" />
-                                <p className="text-muted-foreground">
-                                    {searchTerm || selectedCategory !== "all"
-                                        ? "Nenhum produto encontrado"
-                                        : "Nenhum produto disponível"}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="space-y-2.5 sm:space-y-2">
-                            {filteredProducts.map((product) => {
-                                const cartQty = getCartQuantity(product.id);
+            {/* Main Content - Two Column Layout on Desktop */}
+            <div className="flex-1 flex overflow-hidden">
+                {/* Products List - Left Column */}
+                <ScrollArea className="flex-1">
+                    <div className="w-full max-w-full px-3 py-3 sm:px-4 sm:py-4 mx-auto">
+                        {filteredProducts.length === 0 ? (
+                            <Card>
+                                <CardContent className="flex flex-col items-center justify-center py-12">
+                                    <Store className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <p className="text-muted-foreground">
+                                        {searchTerm || selectedCategory !== "all"
+                                            ? "Nenhum produto encontrado"
+                                            : "Nenhum produto disponível"}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="space-y-2.5 sm:space-y-2">
+                                {filteredProducts.map((product) => {
+                                    const cartItem = cart.find((item) => item.product.id === product.id);
+                                    const cartQty = cartItem?.quantity || 0;
 
-                                return (
-                                    <Card
-                                        key={product.id}
-                                        className="transition-all hover:shadow-md w-full"
-                                    >
-                                        <CardContent className="p-3 sm:p-4">
-                                            <div className="space-y-3">
-                                                {/* Product Info */}
-                                                <div className="flex items-start justify-between gap-3">
+                                    return (
+                                        <Card
+                                            key={product.id}
+                                            className="transition-all hover:shadow-md"
+                                        >
+                                            <CardContent className="p-4">
+                                                <div className="flex flex-col gap-3">
+                                                    {/* Product Info */}
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                            <h3 className="font-medium text-sm sm:text-base">
-                                                                {product.name}
-                                                            </h3>
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                                            <h3 className="font-semibold text-base">{product.name}</h3>
                                                             {product.category && (
                                                                 <Badge variant="secondary" className="text-xs shrink-0">
                                                                     {product.category.icon}
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        <div className="flex items-baseline gap-2 flex-wrap">
-                                                            <span className="font-semibold text-primary text-base">
+                                                        <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                                                            <span className="font-bold text-primary text-base">
                                                                 {formatBRL(product.sell_price)}
                                                             </span>
                                                             <span className="text-xs text-muted-foreground">
@@ -426,52 +431,153 @@ export default function PedidosPage() {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Action Buttons */}
-                                                {cartQty === 0 ? (
-                                                    <Button
-                                                        size="default"
-                                                        onClick={() => addToCart(product)}
-                                                        className="w-full sm:w-auto gap-2"
-                                                    >
-                                                        <Plus className="h-4 w-4" />
-                                                        Adicionar ao Carrinho
-                                                    </Button>
-                                                ) : (
-                                                    <div className="flex items-center justify-center gap-3 py-1">
+                                                    {/* Action Buttons */}
+                                                    {cartQty === 0 ? (
                                                         <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-10 w-10"
-                                                            onClick={() => updateQuantity(product.id, cartQty - 1)}
-                                                        >
-                                                            <Minus className="h-4 w-4" />
-                                                        </Button>
-                                                        <span className="min-w-[4rem] text-center font-semibold text-lg">
-                                                            {cartQty}
-                                                        </span>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-10 w-10"
-                                                            onClick={() => updateQuantity(product.id, cartQty + 1)}
+                                                            size="default"
+                                                            onClick={() => addToCart(product)}
+                                                            className="w-full sm:w-auto gap-2"
                                                         >
                                                             <Plus className="h-4 w-4" />
+                                                            Adicionar ao Carrinho
                                                         </Button>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center gap-3 py-1">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-10 w-10"
+                                                                onClick={() => updateQuantity(product.id, cartQty - 1)}
+                                                            >
+                                                                <Minus className="h-4 w-4" />
+                                                            </Button>
+                                                            <span className="min-w-[3rem] text-center font-bold text-lg">
+                                                                {cartQty}
+                                                            </span>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-10 w-10"
+                                                                onClick={() => updateQuantity(product.id, cartQty + 1)}
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+
+                {/* Cart Sidebar - Right Column (Desktop Only) */}
+                <div className="hidden lg:flex lg:flex-col w-96 border-l bg-muted/30">
+                    <div className="px-6 py-4 border-b bg-background">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">Carrinho</h2>
+                            {cart.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearCart}
+                                    className="text-muted-foreground hover:text-destructive"
+                                >
+                                    Limpar
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    <ScrollArea className="flex-1">
+                        <div className="p-4 space-y-3">
+                            {cart.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <ShoppingCart className="h-12 w-12 text-muted-foreground mb-3" />
+                                    <p className="text-muted-foreground text-sm">
+                                        Carrinho vazio
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Adicione produtos para começar
+                                    </p>
+                                </div>
+                            ) : (
+                                cart.map((item) => (
+                                    <Card key={item.product.id} className="overflow-hidden">
+                                        <CardContent className="p-3">
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-medium text-sm truncate">
+                                                        {item.product.name}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-xs font-semibold text-primary">
+                                                            {formatBRL(item.product.sell_price)}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            × {item.quantity}
+                                                        </span>
                                                     </div>
-                                                )}
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <span className="font-semibold text-sm">
+                                                        {formatBRL(item.product.sell_price * item.quantity)}
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                        onClick={() => removeFromCart(item.product.id)}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>
-                                );
-                            })}
+                                ))
+                            )}
+                        </div>
+                    </ScrollArea>
+
+                    {cart.length > 0 && (
+                        <div className="border-t bg-background p-4 space-y-3">
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Subtotal</span>
+                                    <span className="font-semibold">{formatBRL(totalBRL)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Guarani</span>
+                                    <span>{formatPYG(totalBRL)}</span>
+                                </div>
+                            </div>
+                            <Button
+                                className="w-full gap-2"
+                                size="lg"
+                                onClick={createOrder}
+                                disabled={isProcessing}
+                            >
+                                {isProcessing ? (
+                                    <>Imprimindo...</>
+                                ) : (
+                                    <>
+                                        <Printer className="h-4 w-4" />
+                                        Finalizar Pedido
+                                    </>
+                                )}
+                            </Button>
                         </div>
                     )}
                 </div>
-            </ScrollArea>
+            </div>
 
-            {/* Cart Sheet */}
+
+            {/* Cart Sheet (Mobile Only) */}
             <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
                 <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col p-0">
                     <SheetHeader className="px-6 pt-6 pb-4">
