@@ -63,6 +63,16 @@ export default function PedidosPage() {
     const [customerPhone, setCustomerPhone] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/login");
@@ -92,6 +102,7 @@ export default function PedidosPage() {
         }
 
         setFilteredProducts(filtered);
+        setCurrentPage(1); // Reset to first page when filters change
     }, [searchTerm, selectedCategory, products]);
 
     const fetchProducts = async () => {
@@ -400,76 +411,157 @@ export default function PedidosPage() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="space-y-2.5 sm:space-y-2">
-                                {filteredProducts.map((product) => {
-                                    const cartItem = cart.find((item) => item.product.id === product.id);
-                                    const cartQty = cartItem?.quantity || 0;
+                            <div className="space-y-4">
+                                <div className="space-y-2.5 sm:space-y-2">
+                                    {paginatedProducts.map((product) => {
+                                        const cartItem = cart.find((item) => item.product.id === product.id);
+                                        const cartQty = cartItem?.quantity || 0;
 
-                                    return (
-                                        <Card
-                                            key={product.id}
-                                            className="transition-all hover:shadow-md"
-                                        >
-                                            <CardContent className="p-4">
-                                                <div className="flex flex-col gap-3">
-                                                    {/* Product Info */}
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                                            <h3 className="font-semibold text-base">{product.name}</h3>
-                                                            {product.category && (
-                                                                <Badge variant="secondary" className="text-xs shrink-0">
-                                                                    {product.category.icon}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex flex-wrap items-baseline gap-2 text-sm">
-                                                            <span className="font-bold text-primary text-base">
-                                                                {formatBRL(product.sell_price)}
-                                                            </span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {formatPYG(product.sell_price)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                        return (
+                                            <Card
+                                                key={product.id}
+                                                className="transition-all hover:shadow-md"
+                                            >
+                                                <CardContent className="p-4">
+                                                    <div className="flex flex-col gap-3">
+                                                        {/* Product Info */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                                <h3 className="font-semibold text-base">{product.name}</h3>
+                                                                {product.category && (
+                                                                    <Badge variant="secondary" className="text-xs shrink-0">
+                                                                        {product.category.icon}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
 
-                                                    {/* Action Buttons */}
-                                                    {cartQty === 0 ? (
-                                                        <Button
-                                                            size="default"
-                                                            onClick={() => addToCart(product)}
-                                                            className="w-full sm:w-auto gap-2"
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                            Adicionar ao Carrinho
-                                                        </Button>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center gap-3 py-1">
+                                                            {/* Price Display - Retail & Wholesale */}
+                                                            <div className="grid grid-cols-2 gap-4 p-2 bg-muted/30 rounded-lg">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">
+                                                                        Varejo
+                                                                    </span>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-primary text-base">
+                                                                            {formatBRL(product.sell_price)}
+                                                                        </span>
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            {formatPYG(product.sell_price)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex flex-col border-l pl-4">
+                                                                    <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">
+                                                                        Atacado
+                                                                    </span>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-green-600 text-base">
+                                                                            {formatBRL(product.wholesale_price)}
+                                                                        </span>
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            {formatPYG(product.wholesale_price)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Action Buttons */}
+                                                        {cartQty === 0 ? (
                                                             <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-10 w-10"
-                                                                onClick={() => updateQuantity(product.id, cartQty - 1)}
-                                                            >
-                                                                <Minus className="h-4 w-4" />
-                                                            </Button>
-                                                            <span className="min-w-[3rem] text-center font-bold text-lg">
-                                                                {cartQty}
-                                                            </span>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-10 w-10"
-                                                                onClick={() => updateQuantity(product.id, cartQty + 1)}
+                                                                size="default"
+                                                                onClick={() => addToCart(product)}
+                                                                className="w-full sm:w-auto gap-2"
                                                             >
                                                                 <Plus className="h-4 w-4" />
+                                                                Adicionar ao Carrinho
                                                             </Button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
+                                                        ) : (
+                                                            <div className="flex items-center justify-center gap-3 py-1">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    className="h-10 w-10"
+                                                                    onClick={() => updateQuantity(product.id, cartQty - 1)}
+                                                                >
+                                                                    <Minus className="h-4 w-4" />
+                                                                </Button>
+                                                                <span className="min-w-[3rem] text-center font-bold text-lg">
+                                                                    {cartQty}
+                                                                </span>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    className="h-10 w-10"
+                                                                    onClick={() => updateQuantity(product.id, cartQty + 1)}
+                                                                >
+                                                                    <Plus className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 border-t mt-4">
+                                        <div className="text-sm text-muted-foreground text-center sm:text-left">
+                                            Mostrando {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} de {filteredProducts.length} produtos
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setCurrentPage(1)}
+                                                disabled={currentPage === 1}
+                                                className="h-8 w-8"
+                                            >
+                                                <span className="sr-only">Primeira página</span>
+                                                <span aria-hidden="true">«</span>
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                                className="h-8 w-8"
+                                            >
+                                                <span className="sr-only">Página anterior</span>
+                                                <span aria-hidden="true">‹</span>
+                                            </Button>
+
+                                            <div className="flex items-center justify-center min-w-[80px] text-sm font-medium">
+                                                Página {currentPage} de {totalPages}
+                                            </div>
+
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                disabled={currentPage === totalPages}
+                                                className="h-8 w-8"
+                                            >
+                                                <span className="sr-only">Próxima página</span>
+                                                <span aria-hidden="true">›</span>
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setCurrentPage(totalPages)}
+                                                disabled={currentPage === totalPages}
+                                                className="h-8 w-8"
+                                            >
+                                                <span className="sr-only">Última página</span>
+                                                <span aria-hidden="true">»</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
