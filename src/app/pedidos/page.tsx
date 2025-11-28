@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -33,27 +33,20 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { printOrder } from "@/lib/printer";
 
-interface Product {
-    id: number;
-    name: string;
-    sell_price: number;
-    wholesale_price: number;
-    quantity: number;
-    category?: { name: string; icon: string };
-}
-
-interface CartItem {
-    product: Product;
-    quantity: number;
-}
+// Hooks & Types
+import { useProducts } from "@/hooks/use-products";
+import { useCategories } from "@/hooks/use-categories";
+import { Product, CartItem } from "@/types";
 
 export default function PedidosPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
-    const [products, setProducts] = useState<Product[]>([]);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<any[]>([]);
+    // Data Hooks
+    const { products, isLoading: productsLoading } = useProducts();
+    const { categories } = useCategories();
+
+    // Local State
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -67,26 +60,14 @@ export default function PedidosPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    // Pagination Logic
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/login");
         }
     }, [status, router]);
 
-    useEffect(() => {
-        if (status === "authenticated") {
-            fetchProducts();
-            fetchCategories();
-        }
-    }, [status]);
-
-    useEffect(() => {
+    // Filter Logic
+    const filteredProducts = useMemo(() => {
         let filtered = products;
 
         if (searchTerm) {
@@ -101,37 +82,19 @@ export default function PedidosPage() {
             );
         }
 
-        setFilteredProducts(filtered);
-        setCurrentPage(1); // Reset to first page when filters change
-    }, [searchTerm, selectedCategory, products]);
+        return filtered;
+    }, [products, searchTerm, selectedCategory]);
 
-    const fetchProducts = async () => {
-        const { data, error } = await supabase
-            .from("products")
-            .select(`
-                *,
-                category:categories(id, name, icon, color)
-            `)
-            .order("name", { ascending: true });
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedCategory]);
 
-        if (error) {
-            toast.error("Erro ao carregar produtos");
-        } else {
-            setProducts(data || []);
-            setFilteredProducts(data || []);
-        }
-    };
-
-    const fetchCategories = async () => {
-        const { data, error } = await supabase
-            .from("categories")
-            .select("*")
-            .order("name", { ascending: true });
-
-        if (!error && data) {
-            setCategories(data);
-        }
-    };
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
     const addToCart = (product: Product) => {
         const existingItem = cart.find(item => item.product.id === product.id);
@@ -169,11 +132,6 @@ export default function PedidosPage() {
     const clearCart = () => {
         setCart([]);
         toast.info("Carrinho limpo");
-    };
-
-    const getCartQuantity = (productId: number) => {
-        const item = cart.find(item => item.product.id === productId);
-        return item ? item.quantity : 0;
     };
 
     const calculateTotal = () => {
@@ -301,7 +259,7 @@ export default function PedidosPage() {
     const { totalBRL, totalPYG } = calculateTotal();
     const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-    if (status === "loading") {
+    if (status === "loading" || productsLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
                 <div className="text-center space-y-4">
@@ -456,10 +414,10 @@ export default function PedidosPage() {
                                                                     </span>
                                                                     <div className="flex flex-col">
                                                                         <span className="font-bold text-green-600 text-base">
-                                                                            {formatBRL(product.wholesale_price)}
+                                                                            {formatBRL(product.wholesale_price || 0)}
                                                                         </span>
                                                                         <span className="text-xs text-muted-foreground">
-                                                                            {formatPYG(product.wholesale_price)}
+                                                                            {formatPYG(product.wholesale_price || 0)}
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -803,7 +761,7 @@ export default function PedidosPage() {
                                         disabled={isProcessing}
                                     >
                                         {isProcessing ? (
-                                            "Processando..."
+                                            <>Imprimindo...</>
                                         ) : (
                                             <>
                                                 <Printer className="h-4 w-4" />
