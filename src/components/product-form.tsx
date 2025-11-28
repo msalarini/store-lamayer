@@ -41,40 +41,12 @@ interface ProductFormProps {
     product?: any;
     userEmail: string;
     onSuccess: () => void;
+    categories: any[];
+    suppliers: any[];
 }
 
-export function ProductForm({ product, userEmail, onSuccess }: ProductFormProps) {
+export function ProductForm({ product, userEmail, onSuccess, categories, suppliers }: ProductFormProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [categories, setCategories] = useState<any[]>([]);
-    const [suppliers, setSuppliers] = useState<any[]>([]);
-
-    useEffect(() => {
-        fetchCategories();
-        fetchSuppliers();
-    }, []);
-
-    const fetchCategories = async () => {
-        const { data, error } = await supabase
-            .from("categories")
-            .select("*")
-            .order("name", { ascending: true });
-
-        if (!error && data) {
-            setCategories(data);
-        }
-    };
-
-    const fetchSuppliers = async () => {
-        const { data, error } = await supabase
-            .from("suppliers")
-            .select("*")
-            .eq("is_active", true)
-            .order("name", { ascending: true });
-
-        if (!error && data) {
-            setSuppliers(data);
-        }
-    };
 
     const form = useForm({
         resolver: zodResolver(formSchema),
