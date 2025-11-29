@@ -19,9 +19,9 @@ const OrderItemSchema = z.object({
 const CreateOrderSchema = z.object({
     customer_name: z.string().optional(),
     customer_phone: z.string().optional(),
-    total_brl: z.number(),
-    total_pyg: z.number(),
-    exchange_rate: z.number(),
+    total_brl: z.number().min(0),
+    total_pyg: z.number().min(0),
+    exchange_rate: z.number().min(0),
     items: z.array(OrderItemSchema),
 });
 
